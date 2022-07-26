@@ -2,14 +2,20 @@
 import controlP5.*;
 import websockets.*;
 
+enum State {
+  START, PAUSED, ONGOING;
+}
+
 private class Game {
   int time;
   double timestamp;
   int pass, receive, home, away, out, possession;
   String action, stadium;
   int selectedImage;
+  State state;
   
   Game() {
+    state = State.START;
     time = millis();
     pass = 0;
     receive = 0;
@@ -57,10 +63,31 @@ private class Game {
 
   void handleKeyPress(boolean keyPressed, char key) {
     if (!keyPressed) {
+      lastKeyPressed = '\\';
       return;
     }
+    
+    char k = Character.toUpperCase(key);
+    if (lastKeyPressed == k) {
+      return;
+    }
+    lastKeyPressed = k;
+    
+    if (k == ' ') {
+        if (state == State.PAUSED) {
+          state = State.ONGOING;
+          return;
+        }
 
-    switch (Character.toUpperCase(key)) {
+        state = State.PAUSED;
+        return;
+    }
+    
+    if (state != State.ONGOING) {
+      return;
+    }
+    
+    switch (k) {
       case '1':
         if (game.out == 0) {
           game.out = 1;
@@ -92,7 +119,9 @@ private class Game {
         break;
         
       case 'E':
-        exit();
+        state = State.START;
+        wsc.dispose();
+        wsc = null;
         break;
     }
   }
@@ -132,17 +161,59 @@ private class Game {
   }
 }
 
+private class MainMenu {
+  Button start;
+  ScrollableList list;
+  PFont font;
+  PImage bg;
+  String[] stadiums = new String[3];
+
+  MainMenu() {
+    //Add Ireland and Australia to stadiums array
+    stadiums[0] = "Dalymount Park";
+    stadiums[1] = "Marvel Stadium";
+    stadiums[2] = "Melbourne Cricket Ground";
+
+    font = createFont("arial", 25);
+    bg = loadImage(FIG_PATH + "/Background.png");
+
+    start = cp5.addButton("state")
+      .setPosition(670, 650)
+      .setSize(100, 50)
+      .setLabel("Start")
+      .setFont(font);
+
+    //Load dropdown list
+    list = cp5.addScrollableList("Stadium Selector:")
+      .setPosition(220, 340)
+      .setSize(1000, 1000)
+      .setBarHeight(75)
+      .setItemHeight(65)
+      .setFont(font)
+      .addItems(stadiums);
+  }
+  
+  void show() {
+    textSize(30);
+    background(bg);
+    cp5.show();
+  }
+  
+  void hide() {
+    cp5.hide();
+    list.open();
+  }
+}
+
 // global
 ControlP5 controlP5;
 ControlP5 cp5;
-boolean submit = false;
-PImage bg;
 PImage[] images = new PImage[3];
-String[] stadiums = new String[3];
 PImage[] ball = new PImage[3];
-Game game = new Game();
+Game game;
+char lastKeyPressed = '\\';
+MainMenu menu;
 WebsocketClient wsc;
-int synchronizer = 0;
 
 void settings() {
   //Set size of window
@@ -151,6 +222,7 @@ void settings() {
 
 void setup() {
   cp5 = new ControlP5(this);
+  game = new Game();
 
   //Initalise font
   PFont font = createFont("arial", 25);
@@ -159,45 +231,23 @@ void setup() {
   ball[1] = loadImage(FIG_PATH + "/AFLBall.png");
   ball[2] = loadImage(FIG_PATH + "/CricketBall.png");
 
-  //Add Ireland and Australia to stadiums array
-  stadiums[0] = "Dalymount Park";
-  stadiums[1] = "Marvel Stadium";
-  stadiums[2] = "Melbourne Cricket Ground";
-
-  //Add a cp5 button to start the program
-  cp5.addButton("start")
-    .setPosition(670, 650)
-    .setSize(100, 50)
-    .setLabel("Start")
-    .setFont(font);
-
-  //Load dropdown list
-  cp5.addScrollableList("Stadium Selector:")
-    .setPosition(220, 340)
-    .setSize(1000, 1000)
-    .setBarHeight(75)
-    .setItemHeight(65)
-    .setFont(font)
-    .addItems(stadiums);
+  menu = new MainMenu();
 
   // load images in setup
-  images[0] = loadImage(FIG_PATH + "/Ireland.png"); // note: arrays start at zero!
+  images[0] = loadImage(FIG_PATH + "/Ireland.png"); // note: arrays state at zero!
   images[1] = loadImage(FIG_PATH + "/Australia.png");
   images[2] = loadImage(FIG_PATH + "/Cricket.png");
-
-  bg = loadImage(FIG_PATH + "/Background.png");
 
   frameRate(60);
   textFont(font);
 }
 
 void draw() {
-  //font size 30
-  textSize(30);
-  background(bg);
   
-  //Add cp5 dropdown menu to select stadium of AWS server.
-  if (!submit) {
+  // menu for stadium choice
+  if (game.state == State.START) {
+    menu.show();
+  
     int selectedStadium = (int) cp5.getController("Stadium Selector:").getValue();
     switch (selectedStadium) {
     case 0:
@@ -229,10 +279,11 @@ void draw() {
   text("Press '1' - Ball Out", 50, 105);
   text("Press '2' - Home Goal", 50, 130);
   text("Press '3' - Away Goal", 50, 155);
+  text("Press 'Space' - Pause/Resume Game", 50, 180);
 
   //Everything within this if statement occurs every 0.125 seconds and sends the information to the AWS server.
   int clock = millis();
-  if (clock > game.time + 125) {
+  if (game.state == State.ONGOING && clock > game.time + 125) {
 
     // Iterate timestamp by 0.125 seconds.
     float elapsed = clock - game.time;
@@ -295,11 +346,12 @@ void controlEvent(ControlEvent theEvent) {
   print("control event from : "+theEvent.getController().getName());
   println(", value : "+theEvent.getController().getValue());
 
-  if (theEvent.getController().getName() != "start") {
+  if (theEvent.getController().getName() != "state") {
     return;
   }
 
   cp5.hide();
-  submit = true;
+  game.state = State.PAUSED;
   wsc = new WebsocketClient(this, game.stadium);
+  menu.hide();
 }
