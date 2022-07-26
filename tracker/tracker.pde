@@ -54,6 +54,64 @@ private class Game {
       away + ",\"Out\":" +
       out + "}}";
   }
+
+  void handleKeyPress(boolean keyPressed, char key) {
+    if (!keyPressed) {
+      return;
+    }
+
+    switch (Character.toUpperCase(key)) {
+      case '1':
+        if (game.out == 0) {
+          game.out = 1;
+        }
+        break;
+
+      case '2':
+        if (game.home == 0) {
+          game.home = 1;
+        }
+        break;
+      
+      case '3':
+        if (game.away == 0) {
+          game.away = 1;
+        }
+        break;
+        
+      case 'A':
+        if (game.pass == 0) {
+          game.pass = 1;
+        }
+        break;
+        
+      case 'D':
+        if (game.receive == 0) {
+          game.receive = 1;
+        }
+        break;
+        
+      case 'E':
+        exit();
+        break;
+    }
+  }
+  
+  void handleMousePress(boolean mousePressed, int mouseButton) {
+    if (!mousePressed) {
+      game.possession = POSSESSION_NEUTRAL;
+      return;
+    }
+
+    if (mouseButton == LEFT) {
+        game.possession = 1;
+        return;
+    }
+
+    if (mouseButton == RIGHT) {
+        game.possession = 0;
+    }
+  }
   
   void reset() {
     if (receive == 1) {
@@ -177,15 +235,19 @@ void draw() {
   if (clock > game.time + 125) {
 
     // Iterate timestamp by 0.125 seconds.
-    println(clock - game.time);
+    float elapsed = clock - game.time;
+    println("Elapsed time since last request: " + elapsed);
     game.time = clock;
 
-    // adding 0.125 will desynchronize with the actual clock
-    //game.timestamp += 0.125;
     game.timestamp = (float)game.time / 1000.0;
 
     //Send the information to server in one message
     String json = game.toJsonRequest();
+
+    //TODO: This may become a problem in the future
+    // Calling blocking IO functions in the draw() thread is usually a taboo when making GUI apps
+    // e.g. if the network is very slow, the GUI will freeze until the request finishes
+    // However, I have yet to find non-blocking alternatives in Processing
     wsc.sendMessage(json); 
 
     //Ensure that the vibrations only last one frame.
@@ -204,44 +266,10 @@ void draw() {
   text("Out: " + game.out, 50, 400);
 
   //Controller variables.
-  if (keyPressed) {
-    if (key == '2') {
-      if (game.home == 0) {
-        game.home = 1;
-      }
-    } else if (key == '3') {
-      if (game.away == 0) {
-        game.away = 1;
-      }
-    } else if (key == '1') {
-      if (game.out == 0) {
-        game.out = 1;
-      }
-    } else if (key == 'a' || key == 'A') {
-      if (game.pass == 0) {
-        game.pass = 1;
-      }
-    } else if (key == 'd' || key == 'D') {
-      if (game.receive == 0) {
-        game.receive = 1;
-      }
-    } else if (key == 'e' || key == 'E') {
-      exit(); // Stops the program
-    }
-  }
+  game.handleKeyPress(keyPressed, key);
 
   //Possession variables
-  if (mousePressed && (mouseButton == LEFT)) {
-    if (game.possession == 0 || game.possession == POSSESSION_NEUTRAL) {
-      game.possession = 1;
-    }
-  } else if (mousePressed && (mouseButton == RIGHT)) {
-    if (game.possession == 1 || game.possession == POSSESSION_NEUTRAL) {
-      game.possession = 0;
-    }
-  } else {
-    game.possession = POSSESSION_NEUTRAL;
-  }
+  game.handleMousePress(mousePressed, mouseButton);
 }
 
 //Print what the websocket server is sending to the console.
