@@ -1,11 +1,11 @@
 <p align="center">
-<img src="etc/fig/logoblack.png" alt="Logo">
+<img src="tracker/data/fig/logoblack.png" alt="Logo">
 </p>
 
 <br />
 <p align="center">
   <a href="https://github.com/Field-of-Vision">
-    <img src="etc/fig/fov_icon.png" alt="Logo" width="100" height="100">
+    <img src="tracker/data/fig/fov_icon.png" alt="Logo" width="100" height="100">
   </a>
 
   <p align="center">
