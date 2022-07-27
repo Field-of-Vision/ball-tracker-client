@@ -1,3 +1,6 @@
+# Project specific
+tracker/data/saves
+
 # Processing
 .DS_Store
 applet

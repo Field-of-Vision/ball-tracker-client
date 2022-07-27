@@ -9,7 +9,7 @@ private class Game {
   int time;
   double timestamp;
   int pass, receive, home, away, out, possession;
-  String action, stadium;
+  String action, stadium, url;
   int selectedImage;
   State state;
   
@@ -26,11 +26,12 @@ private class Game {
     selectedImage = -1;
   }
   
-  void setStadium(String stadium, int selectedImage) {
+  void setStadium(String url, String stadium, int selectedImage) {
+    this.url = url;
     this.stadium = stadium;
     this.selectedImage = selectedImage;
     
-    switch(stadium) {
+    switch(url) {
       case DALYMOUNT_PARK:
         this.action = "irelandSendMessage";
         break;
@@ -41,6 +42,19 @@ private class Game {
         this.action = "mcg_AUS_sendMessage";
         break;
     }
+  }
+
+  String toTautJson() {
+    return "{\n\"Timestamp\":" +
+      timestamp + ",\n\"X\":" +
+      mouseX/15 + ",\n\"Y\":" +
+      mouseY/15 + ",\n\"Possession\":" +
+      possession + ",\n\"Pass\":" +
+      pass + ",\n\"Receive\":" +
+      receive + ",\n\"home goal\":" +
+      home + ",\n\"away goal\":" +
+      away + ",\n\"Out\":" +
+      out + "\n}";
   }
 
   String toJsonRequest() {
@@ -120,6 +134,7 @@ private class Game {
       case 'E':
         state = State.START;
         webDisconnect();
+        saveEnd();
         break;
     }
   }
@@ -173,7 +188,7 @@ private class MainMenu {
     stadiums[2] = "Melbourne Cricket Ground";
 
     font = createFont("arial", 25);
-    bg = loadImage(FIG_PATH + "/Background.png");
+    bg = loadImage(dataPath(FIG_PATH) + File.separator + "Background.png");
 
     start = cp5.addButton("state")
       .setPosition(670, 650)
@@ -224,16 +239,16 @@ void setup() {
   //Initalise font
   PFont font = createFont("arial", 25);
 
-  ball[0] = loadImage(FIG_PATH + "/Soccer.png");
-  ball[1] = loadImage(FIG_PATH + "/AFLBall.png");
-  ball[2] = loadImage(FIG_PATH + "/CricketBall.png");
+  ball[0] = loadImage(dataPath(FIG_PATH) + File.separator + "Soccer.png");
+  ball[1] = loadImage(dataPath(FIG_PATH) + File.separator + "AFLBall.png");
+  ball[2] = loadImage(dataPath(FIG_PATH) + File.separator + "CricketBall.png");
 
   menu = new MainMenu();
 
   // load images in setup
-  images[0] = loadImage(FIG_PATH + "/Ireland.png"); // note: arrays state at zero!
-  images[1] = loadImage(FIG_PATH + "/Australia.png");
-  images[2] = loadImage(FIG_PATH + "/Cricket.png");
+  images[0] = loadImage(dataPath(FIG_PATH) + File.separator + "Ireland.png"); // note: arrays state at zero!
+  images[1] = loadImage(dataPath(FIG_PATH) + File.separator + "Australia.png");
+  images[2] = loadImage(dataPath(FIG_PATH) + File.separator + "Cricket.png");
 
   frameRate(60);
   textFont(font);
@@ -248,15 +263,16 @@ void draw() {
     menu.show();
   
     int selectedStadium = (int) cp5.getController("Stadium Selector:").getValue();
+    String stadiumName = menu.stadiums[selectedStadium];
     switch (selectedStadium) {
     case 0:
-      game.setStadium(DALYMOUNT_PARK, selectedStadium);
+      game.setStadium(DALYMOUNT_PARK, stadiumName, selectedStadium);
       break;
     case 1:
-      game.setStadium(MARVEL_STADIUM, selectedStadium);
+      game.setStadium(MARVEL_STADIUM, stadiumName, selectedStadium);
       break;
     case 2:
-      game.setStadium(MELBOURNE_CRICKET_GROUND, selectedStadium);
+      game.setStadium(MELBOURNE_CRICKET_GROUND, stadiumName, selectedStadium);
       break;
     default:
       println("Stadium not handled <" + selectedStadium + ">");
@@ -291,10 +307,8 @@ void draw() {
 
     game.timestamp = (float)game.time / 1000.0;
 
-    //Send the information to server in one message
-    String json = game.toJsonRequest();
-
-    webSendJson(json);
+    webSendJson(game.toJsonRequest());
+    saveAppend(game.toTautJson());
 
     //Ensure that the vibrations only last one frame.
     game.reset();
@@ -347,6 +361,7 @@ void controlEvent(ControlEvent theEvent) {
 
   cp5.hide();
   game.state = State.PAUSED;
-  webConnect(game.stadium);
+  webConnect(game.url);
+  saveStart(game.stadium);
   menu.hide();
 }
