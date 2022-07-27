@@ -1,6 +1,5 @@
 //Import libraries
 import controlP5.*;
-import websockets.*;
 
 enum State {
   START, PAUSED, ONGOING;
@@ -120,8 +119,7 @@ private class Game {
         
       case 'E':
         state = State.START;
-        wsc.dispose();
-        wsc = null;
+        webDisconnect();
         break;
     }
   }
@@ -213,7 +211,6 @@ PImage[] ball = new PImage[3];
 Game game;
 char lastKeyPressed = '\\';
 MainMenu menu;
-WebsocketClient wsc;
 
 void settings() {
   //Set size of window
@@ -240,6 +237,8 @@ void setup() {
 
   frameRate(60);
   textFont(font);
+  
+  webSetup();
 }
 
 void draw() {
@@ -295,11 +294,7 @@ void draw() {
     //Send the information to server in one message
     String json = game.toJsonRequest();
 
-    //TODO: This may become a problem in the future
-    // Calling blocking IO functions in the draw() thread is usually a taboo when making GUI apps
-    // e.g. if the network is very slow, the GUI will freeze until the request finishes
-    // However, I have yet to find non-blocking alternatives in Processing
-    wsc.sendMessage(json); 
+    webSendJson(json);
 
     //Ensure that the vibrations only last one frame.
     game.reset();
@@ -352,6 +347,6 @@ void controlEvent(ControlEvent theEvent) {
 
   cp5.hide();
   game.state = State.PAUSED;
-  wsc = new WebsocketClient(this, game.stadium);
+  webConnect(game.stadium);
   menu.hide();
 }
