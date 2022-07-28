@@ -176,16 +176,23 @@ private class Game {
 
 private class MainMenu {
   Button start;
-  ScrollableList list;
+  ListBox list;
   PFont font;
   PImage bg;
-  String[] stadiums = new String[3];
+  
+  boolean visible = false;
+
+  String[] stadiums = {
+    "Dalymount Park",
+    "Marvel Stadium",
+    "Melbourne Cricket Ground",
+    "Estádio do Dragão",
+    "Estádio da Luz",
+    "Estádio José Alvalade"
+  };
 
   MainMenu() {
     //Add Ireland and Australia to stadiums array
-    stadiums[0] = "Dalymount Park";
-    stadiums[1] = "Marvel Stadium";
-    stadiums[2] = "Melbourne Cricket Ground";
 
     font = createFont("arial", 25);
     bg = loadImage(dataPath(FIG_PATH) + File.separator + "Background.png");
@@ -193,26 +200,43 @@ private class MainMenu {
     start = cp5.addButton("state")
       .setPosition(670, 650)
       .setSize(100, 50)
+      .setColorBackground(color(20, 20, 20))
+      .setColorBackground(color(33, 33, 33))
+      .setColorForeground(color(48, 48, 48))
+      .setColorActive(color(79, 79, 79))
       .setLabel("Start")
       .setFont(font);
 
     //Load dropdown list
-    list = cp5.addScrollableList("Stadium Selector:")
+    list = cp5.addListBox("Stadium Selector:")
       .setPosition(220, 340)
-      .setSize(1000, 1000)
-      .setBarHeight(75)
-      .setItemHeight(65)
+      .setSize(1000, 280)
+      .setBarVisible(false)
+      .setColorBackground(color(33, 33, 33))
+      .setColorForeground(color(48, 48, 48))
+      .setColorActive(color(79, 79, 79))
+      .setItemHeight(70)
       .setFont(font)
       .addItems(stadiums);
   }
   
   void show() {
+    if (visible) {
+      return;
+    }
+    visible = true;
+
     textSize(30);
     background(bg);
     cp5.show();
   }
   
   void hide() {
+    if (!visible) {
+      return;
+    }
+    visible = false;
+
     cp5.hide();
     list.open();
   }
@@ -246,7 +270,7 @@ void setup() {
   menu = new MainMenu();
 
   // load images in setup
-  images[0] = loadImage(dataPath(FIG_PATH) + File.separator + "Ireland.png"); // note: arrays state at zero!
+  images[0] = loadImage(dataPath(FIG_PATH) + File.separator + "Ireland.png");
   images[1] = loadImage(dataPath(FIG_PATH) + File.separator + "Australia.png");
   images[2] = loadImage(dataPath(FIG_PATH) + File.separator + "Cricket.png");
 
@@ -275,7 +299,8 @@ void draw() {
       game.setStadium(MELBOURNE_CRICKET_GROUND, stadiumName, selectedStadium);
       break;
     default:
-      println("Stadium not handled <" + selectedStadium + ">");
+      println("Stadium not handled <" + stadiumName + ">");
+      exit();
     }
 
     return;
@@ -286,15 +311,6 @@ void draw() {
   image(images[game.selectedImage], 0, 0, width, height);
   imageMode(CENTER);
   image(ball[game.selectedImage], mouseX, mouseY);
-
-  //Instructions on screen
-  text("Hold Left Click - Possession", 50, 30);
-  text("Press 'A' - Pass", 50, 55);
-  text("Press 'D' - Receive", 50, 80);
-  text("Press '1' - Ball Out", 50, 105);
-  text("Press '2' - Home Goal", 50, 130);
-  text("Press '3' - Away Goal", 50, 155);
-  text("Press 'Space' - Pause/Resume Game", 50, 180);
 
   //Everything within this if statement occurs every 0.125 seconds and sends the information to the AWS server.
   int clock = millis();
@@ -314,16 +330,25 @@ void draw() {
     game.reset();
   }
 
+  int leftPad = 10;
+  //Instructions on screen
+  text("Hold Left Click - Possession", leftPad, 30);
+  text("Press 'A' - Pass", leftPad, 55);
+  text("Press 'D' - Receive", leftPad, 80);
+  text("Press '1' - Ball Out", leftPad, 105);
+  text("Press '2' - Home Goal", leftPad, 130);
+  text("Press '3' - Away Goal", leftPad, 155);
+  text("Press 'Space' - Pause/Resume Game", leftPad, 180);
   // write output as text on screen for testing purposes.
-  text("Timestamp: " + game.timestamp, 50, 200);
-  text("X: " + mouseX/15, 50, 225);
-  text("Y: " + mouseY/15, 50, 250);
-  text("Possession: " + game.possession, 50, 275);
-  text("Pass: " + game.pass, 50, 300);
-  text("Receive: " + game.receive, 50, 325);
-  text("Home Goal: " + game.home, 50, 350);
-  text("Away Goal: " + game.away, 50, 375);
-  text("Out: " + game.out, 50, 400);
+  text("Timestamp: " + game.timestamp, leftPad, 220);
+  text("X: " + mouseX/15, leftPad, 245);
+  text("Y: " + mouseY/15, leftPad, 270);
+  text("Possession: " + game.possession, leftPad, 295);
+  text("Pass: " + game.pass, leftPad, 320);
+  text("Receive: " + game.receive, leftPad, 345);
+  text("Home Goal: " + game.home, leftPad, 370);
+  text("Away Goal: " + game.away, leftPad, 395);
+  text("Out: " + game.out, leftPad, 420);
 
   //Controller variables.
   game.handleKeyPress(keyPressed, key);
@@ -335,12 +360,6 @@ void draw() {
 //Print what the websocket server is sending to the console.
 void webSocketEvent(String msg) {
   println(msg);
-}
-
-void dropdown(int n) {
-  CColor c = new CColor();
-  c.setBackground(color(255, 255, 0));
-  cp5.get(ScrollableList.class, "dropdown").getItem(n).put("color", c);
 }
 
 void controlEvent(ControlEvent theEvent) {
