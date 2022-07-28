@@ -46,7 +46,7 @@ private class Game {
 
   String toTautJson() {
     return "{\n\"Timestamp\":" +
-      timestamp + ",\n\"X\":" +
+      String.format("%.03f", timestamp) + ",\n\"X\":" +
       mouseX/15 + ",\n\"Y\":" +
       mouseY/15 + ",\n\"Possession\":" +
       possession + ",\n\"Pass\":" +
@@ -63,7 +63,7 @@ private class Game {
     }
 
     return "{\"action\": \"" + action + "\", \"message\": {\"Timestamp\":" +
-      timestamp + ",\"X\":" +
+      String.format("%.03f", timestamp) + ",\"X\":" +
       mouseX/15 + ",\"Y\":" +
       mouseY/15 + ",\"Possession\":" +
       possession + ",\"Pass\":" +
