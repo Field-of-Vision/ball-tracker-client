@@ -17,6 +17,8 @@ void saveThread() {
     out = new PrintWriter(new BufferedWriter(new FileWriter(file)));
 
     out.println("[");
+    
+    boolean isFirst = true;
 
     for(;;) {
       String head = steps.poll();
@@ -30,29 +32,39 @@ void saveThread() {
         continue;
       }
       
-      out.println(head + ",");
+      if (isFirst) {
+        isFirst = false;
+        out.print(head);
+        continue;
+      }
+      out.print(",\n\n" + head);
     }
     
     // flush remaining steps
     for(;;) {
-        println("remaining...");
+      println("Saving remaining steps...");
       String head = steps.poll();
       
       if (head == null) {
         break;
       }
       
-      out.println(head + ",");
+      if (isFirst) {
+        isFirst = false;
+        out.print(head);
+        continue;
+      }
+      out.print(",\n\n" + head);
     }
     
-    out.println("]");
+    out.println("\n]");
     out.close();
   } catch (Exception e) {
     println(e.getMessage());
   }
   
   finished = true;
-  println("finished...");
+  println("Finished save to file <" + filename + ">.");
 }
 
 void saveAppend(String step) {
@@ -62,13 +74,16 @@ void saveAppend(String step) {
 void saveStart(String name) {
     filename = SAVE_PATH + File.separator + name.replace(" ", "_") + "-" + String.valueOf(System.currentTimeMillis()) + ".json";
     filename = dataPath(filename);
+
     file = new File(filename);
     try {
-
-    file.createNewFile();
+      file.createNewFile();
     } catch(Exception e) {
         println(e.getMessage());
+        println("Error creating file. Unable to save game.");
+        return;
     }
+
     terminate = false;
     finished = false;
     thread("saveThread");
