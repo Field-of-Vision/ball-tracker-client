@@ -36,7 +36,7 @@ public class MainPage extends Page {
       .setColorBackground(color(33, 33, 33))
       .setColorForeground(color(48, 48, 48))
       .setColorActive(color(79, 79, 79))
-      .setLabel(LOGIN_LABEL)
+      .setLabel("Login")
       .setFont(font);
 
     list = cp5.addListBox(LIST_LABEL)

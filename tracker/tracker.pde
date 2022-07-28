@@ -8,6 +8,7 @@ PImage[] ball = new PImage[3];
 GamePage game;
 MainPage menu;
 LoginPage login;
+LeavePage leave;
 Page visible;
 
 char lastKeyPressed = '\\';
@@ -22,8 +23,9 @@ void setup() {
   game = new GamePage();
   menu = new MainPage();
   login = new LoginPage();
+  leave = new LeavePage();
 
-  addPages(game, menu, login);
+  addPages(game, menu, login, leave);
   visible = menu;
 
   ball[0] = loadImage(dataPath(FIG_PATH) + File.separator + "Soccer.png");
@@ -81,6 +83,21 @@ void controlEvent(ControlEvent theEvent) {
 
       menu.onClickStart();
       visible = game;
+      return;
+
+    case LeavePage.LEAVE_PAGE_YES_LABEL:
+      leave.onClickYes();
+      visible = menu;
+      return;
+
+    case LeavePage.LEAVE_PAGE_NO_LABEL:
+      leave.onClickNo();
+      visible = game;
+      return;
+    
+    case LoginPage.SUBMIT_LABEL:
+      login.onClickSubmit();
+      visible = menu;
       return;
   }
 }

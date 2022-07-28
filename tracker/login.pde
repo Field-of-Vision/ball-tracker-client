@@ -5,8 +5,6 @@ public class LoginPage extends Page {
   static final String SUBMIT_LABEL = "Login";
   static final String PASS_LABEL = "Password";
   static final String EMAIL_LABEL = "Email";
-  
-  boolean visible;
 
   LoginPage() {
     font = createFont("arial", 25);
@@ -19,7 +17,7 @@ public class LoginPage extends Page {
       .setColorBackground(color(33, 33, 33))
       .setColorForeground(color(48, 48, 48))
       .setColorActive(color(79, 79, 79))
-      .setLabel(SUBMIT_LABEL)
+      .setLabel("Login")
       .setFont(font);
 
     email = cp5.addTextfield(EMAIL_LABEL)

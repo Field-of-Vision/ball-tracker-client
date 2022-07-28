@@ -138,6 +138,11 @@ public class GamePage extends Page {
       return;
     }
     lastKeyPressed = k;
+
+    if (k == 'E') {
+      visible = leave;
+      return;
+    }
     
     if (k == ' ') {
         if (state == State.PAUSED) {
@@ -183,13 +188,6 @@ public class GamePage extends Page {
           receive = 1;
         }
         break;
-        
-      case 'E':
-        state = State.FINISHED;
-        visible = menu;
-        webDisconnect();
-        saveEnd();
-        break;
     }
   }
 
@@ -197,6 +195,12 @@ public class GamePage extends Page {
     state = State.PAUSED;
     webConnect(url);
     saveStart(stadium);
+  }
+  
+  public void finish() {
+    state = State.FINISHED;
+    webDisconnect();
+    saveEnd();
   }
   
   void onMousePressed(boolean mousePressed, int mouseButton) {
